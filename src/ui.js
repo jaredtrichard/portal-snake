@@ -1,4 +1,5 @@
 import {
+  availableBoardWidth,
   boardDisplaySize,
   createGame,
   headingFromSwipeOnce,
@@ -68,15 +69,17 @@ export function mountGame() {
   }
 
   function resizeCanvas() {
-    canvas.width = state.width * CELL;
-    canvas.height = state.height * CELL;
+    const backingW = state.width * CELL;
+    const backingH = state.height * CELL;
+    if (canvas.width !== backingW) canvas.width = backingW;
+    if (canvas.height !== backingH) canvas.height = backingH;
 
     const app = canvas.closest(".app") ?? document.body;
     const appStyle = getComputedStyle(app);
     const padX = parseFloat(appStyle.paddingLeft) + parseFloat(appStyle.paddingRight);
     const stageBorder = 2;
     const viewport = viewportSizeFrom(window.visualViewport, window.innerWidth, window.innerHeight);
-    const maxWidth = Math.max(1, viewport.width - padX - stageBorder);
+    const maxWidth = availableBoardWidth(viewport.width, padX, app.clientWidth, stageBorder);
     const maxHeight = Math.max(1, viewport.height - verticalChrome() - stageBorder);
     const { cssWidth, cssHeight } = boardDisplaySize(
       state.width,

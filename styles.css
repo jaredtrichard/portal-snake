@@ -98,7 +98,6 @@ button:hover {
 
 canvas {
   display: block;
-  max-width: 100%;
   background: var(--panel);
   touch-action: none;
 }

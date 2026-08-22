@@ -70,6 +70,11 @@ export function boardDisplaySize(width, height, cellSize, maxWidth, maxHeight) {
   };
 }
 
+/** One width cap so CSS cannot clamp X independently of style.height. */
+export function availableBoardWidth(viewportWidth, padX, appClientWidth, stageBorder) {
+  return Math.max(1, Math.min(viewportWidth - padX, appClientWidth) - stageBorder);
+}
+
 /** Prefer visualViewport (URL bar / dynamic toolbars); fall back to innerWidth/innerHeight. */
 export function viewportSizeFrom(visualViewport, innerWidth, innerHeight) {
   if (

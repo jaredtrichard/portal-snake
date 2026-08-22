@@ -11,6 +11,7 @@ import {
   headingFromSwipe,
   headingFromSwipeOnce,
   boardDisplaySize,
+  availableBoardWidth,
   touchWithId,
   viewportSizeFrom,
 } from "./game.js";
@@ -335,6 +336,13 @@ test("boardDisplaySize fits the full 20×28 grid into a phone viewport", () => {
   const landscape = boardDisplaySize(20, 20, 28, 700, 280);
   assert.equal(landscape.cssWidth, 280);
   assert.equal(landscape.cssHeight, 280);
+});
+
+test("availableBoardWidth uses one cap so width and height stay square", () => {
+  assert.equal(availableBoardWidth(1200, 32, 720, 2), 718);
+  assert.equal(availableBoardWidth(390, 32, 343, 2), 341);
+  const size = boardDisplaySize(20, 20, 28, availableBoardWidth(800, 32, 720, 2), 500);
+  assert.equal(size.cssWidth, size.cssHeight);
 });
 
 test("viewportSizeFrom prefers visualViewport and falls back to inner size", () => {
