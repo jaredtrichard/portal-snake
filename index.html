@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal Snake</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hud">
+        <div>
+          <h1>Portal Snake</h1>
+          <p class="hint">Arrows or WASD to move. Eat food. Use the matching portals.</p>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <span class="label">Score</span>
+            <span id="score">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Status</span>
+            <span id="status">Playing</span>
+          </div>
+          <button id="new-game" type="button">New Game</button>
+        </div>
+      </header>
+
+      <div class="stage">
+        <canvas id="board" aria-label="Snake game board"></canvas>
+        <div id="overlay" class="overlay" hidden>
+          <p id="overlay-title">Game over</p>
+          <button id="overlay-new-game" type="button">New Game</button>
+        </div>
+      </div>
+
+      <footer class="legend">
+        <span><i class="swatch snake"></i> Snake</span>
+        <span><i class="swatch food"></i> Food</span>
+        <span><i class="swatch portal-a"></i> Portal A</span>
+        <span><i class="swatch portal-b"></i> Portal B</span>
+      </footer>
+    </main>
+    <script type="module" src="src/ui.js"></script>
+  </body>
+</html>
