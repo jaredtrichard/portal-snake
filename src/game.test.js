@@ -9,6 +9,8 @@ import {
   areOrthogonallyAdjacent,
   placePortals,
   headingFromSwipe,
+  headingFromSwipeOnce,
+  boardDisplaySize,
 } from "./game.js";
 
 function firstAvailableRng() {
@@ -309,6 +311,28 @@ test("swipe headings queue through queueDirection and still ignore a 180 against
   assert.equal(queued.queuedDirection, "up");
   const next = step(queued);
   assert.equal(next.direction, "up");
+});
+
+test("headingFromSwipeOnce queues only the first qualifying move of a gesture", () => {
+  assert.equal(headingFromSwipeOnce(10, 0, false), null);
+  assert.equal(headingFromSwipeOnce(40, 0, false), "right");
+  assert.equal(headingFromSwipeOnce(40, 80, true), null);
+  assert.equal(headingFromSwipeOnce(-50, 0, true), null);
+});
+
+test("boardDisplaySize fits the full 20×28 grid into a phone viewport", () => {
+  const desktop = boardDisplaySize(20, 20, 28, 800, 800);
+  assert.deepEqual(desktop, { cssWidth: 560, cssHeight: 560 });
+
+  const phone = boardDisplaySize(20, 20, 28, 343, 500);
+  assert.equal(phone.cssWidth, 343);
+  assert.equal(phone.cssHeight, 343);
+  assert.ok(phone.cssWidth <= 343);
+  assert.ok(phone.cssHeight <= 500);
+
+  const landscape = boardDisplaySize(20, 20, 28, 700, 280);
+  assert.equal(landscape.cssWidth, 280);
+  assert.equal(landscape.cssHeight, 280);
 });
 
 test("a dead snake does not move on later ticks", () => {

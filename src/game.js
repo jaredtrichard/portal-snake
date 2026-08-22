@@ -50,6 +50,26 @@ export function headingFromSwipe(dx, dy, minDistance = SWIPE_MIN_DISTANCE) {
   return dy > 0 ? "down" : "up";
 }
 
+/** First qualifying swipe in a gesture; later moves of the same touch return null. */
+export function headingFromSwipeOnce(dx, dy, alreadyQueued, minDistance = SWIPE_MIN_DISTANCE) {
+  if (alreadyQueued) return null;
+  return headingFromSwipe(dx, dy, minDistance);
+}
+
+/**
+ * CSS pixel size for the full grid so every column and row stays on-screen.
+ * Does not change the logical 20×20 / 28px cell geometry.
+ */
+export function boardDisplaySize(width, height, cellSize, maxWidth, maxHeight) {
+  const logicalW = width * cellSize;
+  const logicalH = height * cellSize;
+  const scale = Math.min(1, maxWidth / logicalW, maxHeight / logicalH);
+  return {
+    cssWidth: Math.max(1, Math.floor(logicalW * scale)),
+    cssHeight: Math.max(1, Math.floor(logicalH * scale)),
+  };
+}
+
 export function cellKey(cell) {
   return `${cell.x},${cell.y}`;
 }
