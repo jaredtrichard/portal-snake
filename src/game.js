@@ -124,8 +124,10 @@ export function createGame(config = {}) {
 export function queueDirection(state, direction) {
   if (!DIRECTIONS[direction]) return state;
   if (state.status !== "playing") return state;
-  const current = state.queuedDirection ?? state.direction;
-  if (isOpposite(current, direction)) return state;
+  // Reject a 180 against the committed body heading, not the buffered turn.
+  // Otherwise: heading right, queue up, then queue left in the same tick would
+  // replace the buffer with a reverse into the neck.
+  if (isOpposite(state.direction, direction)) return state;
   return { ...state, queuedDirection: direction };
 }
 

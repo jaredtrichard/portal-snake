@@ -196,6 +196,21 @@ test("queueDirection ignores a 180-degree reverse", () => {
   assert.deepEqual(next.snake[0], { x: 3, y: 3 });
 });
 
+test("queueDirection ignores a same-tick reverse after a perpendicular press", () => {
+  const headingRight = playable({ direction: "right" });
+  const afterUp = queueDirection(headingRight, "up");
+  assert.equal(afterUp.queuedDirection, "up");
+
+  const afterLeft = queueDirection(afterUp, "left");
+  assert.equal(afterLeft.queuedDirection, "up");
+
+  const next = step(afterLeft);
+  assert.equal(next.status, "playing");
+  assert.equal(next.deathReason, null);
+  assert.equal(next.direction, "up");
+  assert.deepEqual(next.snake[0], { x: 3, y: 3 });
+});
+
 test("New Game via createGame resets score and play status", () => {
   let state = playable({
     score: 11,
