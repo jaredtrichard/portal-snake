@@ -88,7 +88,6 @@ button:hover {
 .stage {
   position: relative;
   display: inline-block;
-  max-width: 100%;
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 16px;
   overflow: hidden;
