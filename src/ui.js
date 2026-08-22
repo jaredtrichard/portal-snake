@@ -93,6 +93,7 @@ export function mountGame() {
   }
 
   function reset() {
+    resetTouch();
     state = createGame();
     resizeCanvas();
     overlay.hidden = true;
