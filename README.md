@@ -12,7 +12,7 @@ npm start
 
 Then open http://localhost:8080.
 
-- **Move:** arrow keys or WASD
+- **Move:** arrow keys, WASD, or swipe the board (up/down/left/right)
 - **Goal:** eat food to grow and score
 - **Death:** hitting a wall or your own body
 - **New Game:** resets the board, snake, score, food, and portals

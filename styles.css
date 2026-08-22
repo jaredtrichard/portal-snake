@@ -91,11 +91,13 @@ button:hover {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(2, 6, 23, 0.55);
+  touch-action: none;
 }
 
 canvas {
   display: block;
   background: var(--panel);
+  touch-action: none;
 }
 
 .overlay {

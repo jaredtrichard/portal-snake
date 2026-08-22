@@ -8,6 +8,7 @@ import {
   cellsEqual,
   areOrthogonallyAdjacent,
   placePortals,
+  headingFromSwipe,
 } from "./game.js";
 
 function firstAvailableRng() {
@@ -280,6 +281,34 @@ test("placePortals never returns two orthogonally adjacent cells", () => {
     assert.equal(cellsEqual(placed[0], placed[1]), false);
     assert.equal(areOrthogonallyAdjacent(placed[0], placed[1]), false);
   }
+});
+
+test("headingFromSwipe maps the four swipe axes to the same headings as arrows/WASD", () => {
+  assert.equal(headingFromSwipe(0, -40), "up");
+  assert.equal(headingFromSwipe(0, 40), "down");
+  assert.equal(headingFromSwipe(-40, 0), "left");
+  assert.equal(headingFromSwipe(40, 0), "right");
+});
+
+test("headingFromSwipe ignores taps and follows the dominant axis", () => {
+  assert.equal(headingFromSwipe(0, 0), null);
+  assert.equal(headingFromSwipe(10, -8), null);
+  assert.equal(headingFromSwipe(50, 12), "right");
+  assert.equal(headingFromSwipe(-12, -50), "up");
+});
+
+test("swipe headings queue through queueDirection and still ignore a 180 against body heading", () => {
+  const headingRight = playable({ direction: "right" });
+  const reverse = headingFromSwipe(-40, 0);
+  assert.equal(reverse, "left");
+  assert.equal(queueDirection(headingRight, reverse).queuedDirection, null);
+
+  const turn = headingFromSwipe(0, -40);
+  assert.equal(turn, "up");
+  const queued = queueDirection(headingRight, turn);
+  assert.equal(queued.queuedDirection, "up");
+  const next = step(queued);
+  assert.equal(next.direction, "up");
 });
 
 test("a dead snake does not move on later ticks", () => {

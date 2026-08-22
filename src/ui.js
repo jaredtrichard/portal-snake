@@ -1,4 +1,4 @@
-import { createGame, queueDirection, step } from "./game.js";
+import { createGame, headingFromSwipe, queueDirection, step } from "./game.js";
 
 const KEY_TO_DIRECTION = {
   ArrowUp: "up",
@@ -142,6 +142,45 @@ export function mountGame() {
     if (!direction) return;
     event.preventDefault();
     state = queueDirection(state, direction);
+  });
+
+  let touchOrigin = null;
+
+  function pointFromTouch(touch) {
+    return { x: touch.clientX, y: touch.clientY };
+  }
+
+  canvas.addEventListener(
+    "touchstart",
+    (event) => {
+      if (event.changedTouches.length === 0) return;
+      touchOrigin = pointFromTouch(event.changedTouches[0]);
+    },
+    { passive: true },
+  );
+
+  canvas.addEventListener(
+    "touchmove",
+    (event) => {
+      event.preventDefault();
+    },
+    { passive: false },
+  );
+
+  canvas.addEventListener(
+    "touchend",
+    (event) => {
+      if (!touchOrigin || event.changedTouches.length === 0) return;
+      const end = pointFromTouch(event.changedTouches[0]);
+      const direction = headingFromSwipe(end.x - touchOrigin.x, end.y - touchOrigin.y);
+      touchOrigin = null;
+      if (direction) state = queueDirection(state, direction);
+    },
+    { passive: true },
+  );
+
+  canvas.addEventListener("touchcancel", () => {
+    touchOrigin = null;
   });
 
   newGameBtn.addEventListener("click", reset);

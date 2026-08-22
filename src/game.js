@@ -39,6 +39,17 @@ export function isOpposite(a, b) {
   return DIRECTIONS[a].x + DIRECTIONS[b].x === 0 && DIRECTIONS[a].y + DIRECTIONS[b].y === 0;
 }
 
+/** Dominant-axis swipe delta → the same four headings as arrows/WASD. */
+export const SWIPE_MIN_DISTANCE = 24;
+
+export function headingFromSwipe(dx, dy, minDistance = SWIPE_MIN_DISTANCE) {
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+  if (absX < minDistance && absY < minDistance) return null;
+  if (absX >= absY) return dx > 0 ? "right" : "left";
+  return dy > 0 ? "down" : "up";
+}
+
 export function cellKey(cell) {
   return `${cell.x},${cell.y}`;
 }
