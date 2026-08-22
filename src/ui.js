@@ -4,6 +4,8 @@ import {
   headingFromSwipeOnce,
   queueDirection,
   step,
+  touchWithId,
+  viewportSizeFrom,
 } from "./game.js";
 
 const KEY_TO_DIRECTION = {
@@ -73,8 +75,9 @@ export function mountGame() {
     const appStyle = getComputedStyle(app);
     const padX = parseFloat(appStyle.paddingLeft) + parseFloat(appStyle.paddingRight);
     const stageBorder = 2;
-    const maxWidth = Math.max(1, document.documentElement.clientWidth - padX - stageBorder);
-    const maxHeight = Math.max(1, window.innerHeight - verticalChrome() - stageBorder);
+    const viewport = viewportSizeFrom(window.visualViewport, window.innerWidth, window.innerHeight);
+    const maxWidth = Math.max(1, viewport.width - padX - stageBorder);
+    const maxHeight = Math.max(1, viewport.height - verticalChrome() - stageBorder);
     const { cssWidth, cssHeight } = boardDisplaySize(
       state.width,
       state.height,
@@ -179,6 +182,7 @@ export function mountGame() {
     state = queueDirection(state, direction);
   });
 
+  let touchId = null;
   let touchOrigin = null;
   let swipeQueued = false;
 
@@ -187,6 +191,7 @@ export function mountGame() {
   }
 
   function resetTouch() {
+    touchId = null;
     touchOrigin = null;
     swipeQueued = false;
   }
@@ -194,8 +199,11 @@ export function mountGame() {
   canvas.addEventListener(
     "touchstart",
     (event) => {
-      if (event.changedTouches.length === 0) return;
-      touchOrigin = pointFromTouch(event.changedTouches[0]);
+      if (touchId != null) return;
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      touchId = touch.identifier;
+      touchOrigin = pointFromTouch(touch);
       swipeQueued = false;
     },
     { passive: true },
@@ -205,11 +213,13 @@ export function mountGame() {
     "touchmove",
     (event) => {
       event.preventDefault();
-      if (!touchOrigin || event.touches.length === 0) return;
-      const point = pointFromTouch(event.touches[0]);
+      if (touchId == null || !touchOrigin) return;
+      const touch =
+        touchWithId(event.changedTouches, touchId) ?? touchWithId(event.touches, touchId);
+      if (!touch) return;
       const direction = headingFromSwipeOnce(
-        point.x - touchOrigin.x,
-        point.y - touchOrigin.y,
+        touch.clientX - touchOrigin.x,
+        touch.clientY - touchOrigin.y,
         swipeQueued,
       );
       if (!direction) return;
@@ -219,16 +229,25 @@ export function mountGame() {
     { passive: false },
   );
 
-  canvas.addEventListener("touchend", resetTouch);
-  canvas.addEventListener("touchcancel", resetTouch);
+  function endTrackedTouch(event) {
+    if (touchId == null) return;
+    if (!touchWithId(event.changedTouches, touchId)) return;
+    resetTouch();
+  }
+
+  canvas.addEventListener("touchend", endTrackedTouch);
+  canvas.addEventListener("touchcancel", endTrackedTouch);
 
   newGameBtn.addEventListener("click", reset);
   overlayNewGameBtn.addEventListener("click", reset);
 
-  window.addEventListener("resize", () => {
+  function onViewportChange() {
     resizeCanvas();
     render();
-  });
+  }
+
+  window.addEventListener("resize", onViewportChange);
+  window.visualViewport?.addEventListener("resize", onViewportChange);
 
   resizeCanvas();
   render();

@@ -70,6 +70,28 @@ export function boardDisplaySize(width, height, cellSize, maxWidth, maxHeight) {
   };
 }
 
+/** Prefer visualViewport (URL bar / dynamic toolbars); fall back to innerWidth/innerHeight. */
+export function viewportSizeFrom(visualViewport, innerWidth, innerHeight) {
+  if (
+    visualViewport &&
+    Number.isFinite(visualViewport.width) &&
+    Number.isFinite(visualViewport.height) &&
+    visualViewport.width > 0 &&
+    visualViewport.height > 0
+  ) {
+    return { width: visualViewport.width, height: visualViewport.height };
+  }
+  return { width: innerWidth, height: innerHeight };
+}
+
+export function touchWithId(touches, id) {
+  if (id == null || !touches) return null;
+  for (let i = 0; i < touches.length; i += 1) {
+    if (touches[i].identifier === id) return touches[i];
+  }
+  return null;
+}
+
 export function cellKey(cell) {
   return `${cell.x},${cell.y}`;
 }

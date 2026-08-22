@@ -11,6 +11,8 @@ import {
   headingFromSwipe,
   headingFromSwipeOnce,
   boardDisplaySize,
+  touchWithId,
+  viewportSizeFrom,
 } from "./game.js";
 
 function firstAvailableRng() {
@@ -333,6 +335,29 @@ test("boardDisplaySize fits the full 20×28 grid into a phone viewport", () => {
   const landscape = boardDisplaySize(20, 20, 28, 700, 280);
   assert.equal(landscape.cssWidth, 280);
   assert.equal(landscape.cssHeight, 280);
+});
+
+test("viewportSizeFrom prefers visualViewport and falls back to inner size", () => {
+  assert.deepEqual(viewportSizeFrom({ width: 390, height: 620 }, 390, 844), {
+    width: 390,
+    height: 620,
+  });
+  assert.deepEqual(viewportSizeFrom(null, 1024, 768), { width: 1024, height: 768 });
+  assert.deepEqual(viewportSizeFrom({ width: 0, height: 0 }, 375, 667), {
+    width: 375,
+    height: 667,
+  });
+});
+
+test("touchWithId binds a gesture to the first identifier and ignores others", () => {
+  const touches = [
+    { identifier: 7, clientX: 10, clientY: 20 },
+    { identifier: 9, clientX: 80, clientY: 90 },
+  ];
+  assert.equal(touchWithId(touches, 7).clientX, 10);
+  assert.equal(touchWithId(touches, 9).clientY, 90);
+  assert.equal(touchWithId(touches, 3), null);
+  assert.equal(touchWithId(touches, null), null);
 });
 
 test("a dead snake does not move on later ticks", () => {
