@@ -6,6 +6,8 @@ import {
   step,
   wrapThroughPortals,
   cellsEqual,
+  areOrthogonallyAdjacent,
+  placePortals,
 } from "./game.js";
 
 function firstAvailableRng() {
@@ -44,6 +46,7 @@ test("createGame starts with a snake, food, score 0, and a portal pair", () => {
   assert.ok(state.food);
   assert.equal(state.portals.length, 2);
   assert.equal(cellsEqual(state.portals[0], state.portals[1]), false);
+  assert.equal(areOrthogonallyAdjacent(state.portals[0], state.portals[1]), false);
 });
 
 test("eating food grows the snake and increases score", () => {
@@ -176,6 +179,7 @@ test("eating food relocates the portal pair", () => {
   const next = step(state);
   assert.equal(next.portals.length, 2);
   assert.equal(cellsEqual(next.portals[0], next.portals[1]), false);
+  assert.equal(areOrthogonallyAdjacent(next.portals[0], next.portals[1]), false);
   const samePair =
     cellsEqual(next.portals[0], portals[0]) && cellsEqual(next.portals[1], portals[1]);
   assert.equal(samePair, false);
@@ -226,6 +230,56 @@ test("New Game via createGame resets score and play status", () => {
   assert.equal(state.status, "playing");
   assert.equal(state.deathReason, null);
   assert.ok(state.snake.length >= 3);
+});
+
+test("areOrthogonallyAdjacent is true only for edge-sharing neighbors", () => {
+  assert.equal(areOrthogonallyAdjacent({ x: 3, y: 3 }, { x: 4, y: 3 }), true);
+  assert.equal(areOrthogonallyAdjacent({ x: 3, y: 3 }, { x: 2, y: 3 }), true);
+  assert.equal(areOrthogonallyAdjacent({ x: 3, y: 3 }, { x: 3, y: 2 }), true);
+  assert.equal(areOrthogonallyAdjacent({ x: 3, y: 3 }, { x: 3, y: 4 }), true);
+  assert.equal(areOrthogonallyAdjacent({ x: 3, y: 3 }, { x: 4, y: 4 }), false);
+  assert.equal(areOrthogonallyAdjacent({ x: 3, y: 3 }, { x: 5, y: 3 }), false);
+});
+
+test("placePortals never returns two orthogonally adjacent cells", () => {
+  const sequential = {
+    width: 8,
+    height: 6,
+    snake: [
+      { x: 7, y: 5 },
+      { x: 6, y: 5 },
+      { x: 5, y: 5 },
+    ],
+    food: { x: 0, y: 5 },
+    portals: null,
+    rng: () => 0,
+  };
+  const forced = placePortals(sequential);
+  assert.ok(forced);
+  assert.equal(areOrthogonallyAdjacent(forced[0], forced[1]), false);
+
+  for (let i = 0; i < 200; i += 1) {
+    let seed = (i + 1) * 9973;
+    const rng = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const placed = placePortals({
+      width: 10,
+      height: 8,
+      snake: [
+        { x: 4, y: 4 },
+        { x: 3, y: 4 },
+        { x: 2, y: 4 },
+      ],
+      food: { x: 1, y: 1 },
+      portals: null,
+      rng,
+    });
+    assert.ok(placed);
+    assert.equal(cellsEqual(placed[0], placed[1]), false);
+    assert.equal(areOrthogonallyAdjacent(placed[0], placed[1]), false);
+  }
 });
 
 test("a dead snake does not move on later ticks", () => {

@@ -10,8 +10,9 @@
  *   exit portal does not immediately re-teleport; the next tick continues
  *   forward from there.
  * - Eating food always relocates both portals to two new empty cells (not on
- *   the snake, the new food, or each other). A new pair is spawned the same
- *   way if none exist yet.
+ *   the snake, the new food, or each other, and not orthogonally adjacent).
+ *   A new pair is spawned the same way if none exist yet. Orthogonal neighbors
+ *   (sharing an edge) are rejected because they are death traps; diagonal is OK.
  */
 
 export const DIRECTIONS = {
@@ -26,6 +27,12 @@ export const DEFAULT_HEIGHT = 20;
 
 export function cellsEqual(a, b) {
   return Boolean(a && b && a.x === b.x && a.y === b.y);
+}
+
+/** True when two cells share an edge (up/down/left/right). Diagonal is not adjacent. */
+export function areOrthogonallyAdjacent(a, b) {
+  if (!a || !b) return false;
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
 }
 
 export function isOpposite(a, b) {
@@ -83,14 +90,24 @@ export function placeFood(state) {
 
 /**
  * Always pick two distinct empty cells for the matching pair.
- * Occupied: snake, food, and the first portal while choosing the second.
+ * Occupied: snake and food. The pair must not be orthogonally adjacent
+ * (sharing an edge) — those placements are instant death traps.
  */
 export function placePortals(state) {
-  const first = pickEmptyCell({ ...state, portals: null }, state.rng);
-  if (!first) return null;
-  const second = pickEmptyCell({ ...state, portals: null }, state.rng, [first]);
-  if (!second) return null;
-  return [first, second];
+  const cells = emptyCells({ ...state, portals: null });
+  if (cells.length < 2) return null;
+
+  const start = Math.floor(state.rng() * cells.length);
+  for (let offset = 0; offset < cells.length; offset += 1) {
+    const first = cells[(start + offset) % cells.length];
+    const candidates = cells.filter(
+      (cell) => !cellsEqual(cell, first) && !areOrthogonallyAdjacent(cell, first),
+    );
+    if (candidates.length === 0) continue;
+    const second = candidates[Math.floor(state.rng() * candidates.length)];
+    return [first, second];
+  }
+  return null;
 }
 
 export function createGame(config = {}) {
