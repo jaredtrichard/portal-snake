@@ -39,6 +39,64 @@ export function isOpposite(a, b) {
   return DIRECTIONS[a].x + DIRECTIONS[b].x === 0 && DIRECTIONS[a].y + DIRECTIONS[b].y === 0;
 }
 
+/** Dominant-axis swipe delta → the same four headings as arrows/WASD. */
+export const SWIPE_MIN_DISTANCE = 24;
+
+export function headingFromSwipe(dx, dy, minDistance = SWIPE_MIN_DISTANCE) {
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+  if (absX < minDistance && absY < minDistance) return null;
+  if (absX >= absY) return dx > 0 ? "right" : "left";
+  return dy > 0 ? "down" : "up";
+}
+
+/** First qualifying swipe in a gesture; later moves of the same touch return null. */
+export function headingFromSwipeOnce(dx, dy, alreadyQueued, minDistance = SWIPE_MIN_DISTANCE) {
+  if (alreadyQueued) return null;
+  return headingFromSwipe(dx, dy, minDistance);
+}
+
+/**
+ * CSS pixel size for the full grid so every column and row stays on-screen.
+ * Does not change the logical 20×20 / 28px cell geometry.
+ */
+export function boardDisplaySize(width, height, cellSize, maxWidth, maxHeight) {
+  const logicalW = width * cellSize;
+  const logicalH = height * cellSize;
+  const scale = Math.min(1, maxWidth / logicalW, maxHeight / logicalH);
+  return {
+    cssWidth: Math.max(1, Math.floor(logicalW * scale)),
+    cssHeight: Math.max(1, Math.floor(logicalH * scale)),
+  };
+}
+
+/** One width cap so CSS cannot clamp X independently of style.height. */
+export function availableBoardWidth(viewportWidth, padX, appClientWidth, stageBorder) {
+  return Math.max(1, Math.min(viewportWidth - padX, appClientWidth) - stageBorder);
+}
+
+/** Prefer visualViewport (URL bar / dynamic toolbars); fall back to innerWidth/innerHeight. */
+export function viewportSizeFrom(visualViewport, innerWidth, innerHeight) {
+  if (
+    visualViewport &&
+    Number.isFinite(visualViewport.width) &&
+    Number.isFinite(visualViewport.height) &&
+    visualViewport.width > 0 &&
+    visualViewport.height > 0
+  ) {
+    return { width: visualViewport.width, height: visualViewport.height };
+  }
+  return { width: innerWidth, height: innerHeight };
+}
+
+export function touchWithId(touches, id) {
+  if (id == null || !touches) return null;
+  for (let i = 0; i < touches.length; i += 1) {
+    if (touches[i].identifier === id) return touches[i];
+  }
+  return null;
+}
+
 export function cellKey(cell) {
   return `${cell.x},${cell.y}`;
 }

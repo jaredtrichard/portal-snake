@@ -1,4 +1,13 @@
-import { createGame, queueDirection, step } from "./game.js";
+import {
+  availableBoardWidth,
+  boardDisplaySize,
+  createGame,
+  headingFromSwipeOnce,
+  queueDirection,
+  step,
+  touchWithId,
+  viewportSizeFrom,
+} from "./game.js";
 
 const KEY_TO_DIRECTION = {
   ArrowUp: "up",
@@ -46,12 +55,45 @@ export function mountGame() {
   let lastTick = 0;
   let rafId = 0;
 
+  function verticalChrome() {
+    const app = canvas.closest(".app") ?? document.body;
+    const hud = document.querySelector(".hud");
+    const legend = document.querySelector(".legend");
+    const appStyle = getComputedStyle(app);
+    const padY = parseFloat(appStyle.paddingTop) + parseFloat(appStyle.paddingBottom);
+    const hudH = hud ? hud.getBoundingClientRect().height : 0;
+    const legendH = legend ? legend.getBoundingClientRect().height : 0;
+    const hudMb = hud ? parseFloat(getComputedStyle(hud).marginBottom) || 0 : 0;
+    const legendMt = legend ? parseFloat(getComputedStyle(legend).marginTop) || 0 : 0;
+    return padY + hudH + hudMb + legendH + legendMt;
+  }
+
   function resizeCanvas() {
-    canvas.width = state.width * CELL;
-    canvas.height = state.height * CELL;
+    const backingW = state.width * CELL;
+    const backingH = state.height * CELL;
+    if (canvas.width !== backingW) canvas.width = backingW;
+    if (canvas.height !== backingH) canvas.height = backingH;
+
+    const app = canvas.closest(".app") ?? document.body;
+    const appStyle = getComputedStyle(app);
+    const padX = parseFloat(appStyle.paddingLeft) + parseFloat(appStyle.paddingRight);
+    const stageBorder = 2;
+    const viewport = viewportSizeFrom(window.visualViewport, window.innerWidth, window.innerHeight);
+    const maxWidth = availableBoardWidth(viewport.width, padX, app.clientWidth, stageBorder);
+    const maxHeight = Math.max(1, viewport.height - verticalChrome() - stageBorder);
+    const { cssWidth, cssHeight } = boardDisplaySize(
+      state.width,
+      state.height,
+      CELL,
+      maxWidth,
+      maxHeight,
+    );
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
   }
 
   function reset() {
+    resetTouch();
     state = createGame();
     resizeCanvas();
     overlay.hidden = true;
@@ -144,8 +186,72 @@ export function mountGame() {
     state = queueDirection(state, direction);
   });
 
+  let touchId = null;
+  let touchOrigin = null;
+  let swipeQueued = false;
+
+  function pointFromTouch(touch) {
+    return { x: touch.clientX, y: touch.clientY };
+  }
+
+  function resetTouch() {
+    touchId = null;
+    touchOrigin = null;
+    swipeQueued = false;
+  }
+
+  canvas.addEventListener(
+    "touchstart",
+    (event) => {
+      if (touchId != null) return;
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      touchId = touch.identifier;
+      touchOrigin = pointFromTouch(touch);
+      swipeQueued = false;
+    },
+    { passive: true },
+  );
+
+  canvas.addEventListener(
+    "touchmove",
+    (event) => {
+      event.preventDefault();
+      if (touchId == null || !touchOrigin) return;
+      const touch =
+        touchWithId(event.changedTouches, touchId) ?? touchWithId(event.touches, touchId);
+      if (!touch) return;
+      const direction = headingFromSwipeOnce(
+        touch.clientX - touchOrigin.x,
+        touch.clientY - touchOrigin.y,
+        swipeQueued,
+      );
+      if (!direction) return;
+      swipeQueued = true;
+      state = queueDirection(state, direction);
+    },
+    { passive: false },
+  );
+
+  function endTrackedTouch(event) {
+    if (touchId == null) return;
+    if (!touchWithId(event.changedTouches, touchId)) return;
+    resetTouch();
+  }
+
+  canvas.addEventListener("touchend", endTrackedTouch);
+  canvas.addEventListener("touchcancel", endTrackedTouch);
+
   newGameBtn.addEventListener("click", reset);
   overlayNewGameBtn.addEventListener("click", reset);
+
+  function onViewportChange() {
+    resizeCanvas();
+    render();
+  }
+
+  window.addEventListener("resize", onViewportChange);
+  window.visualViewport?.addEventListener("resize", onViewportChange);
 
   resizeCanvas();
   render();

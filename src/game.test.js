@@ -8,6 +8,12 @@ import {
   cellsEqual,
   areOrthogonallyAdjacent,
   placePortals,
+  headingFromSwipe,
+  headingFromSwipeOnce,
+  boardDisplaySize,
+  availableBoardWidth,
+  touchWithId,
+  viewportSizeFrom,
 } from "./game.js";
 
 function firstAvailableRng() {
@@ -280,6 +286,86 @@ test("placePortals never returns two orthogonally adjacent cells", () => {
     assert.equal(cellsEqual(placed[0], placed[1]), false);
     assert.equal(areOrthogonallyAdjacent(placed[0], placed[1]), false);
   }
+});
+
+test("headingFromSwipe maps the four swipe axes to the same headings as arrows/WASD", () => {
+  assert.equal(headingFromSwipe(0, -40), "up");
+  assert.equal(headingFromSwipe(0, 40), "down");
+  assert.equal(headingFromSwipe(-40, 0), "left");
+  assert.equal(headingFromSwipe(40, 0), "right");
+});
+
+test("headingFromSwipe ignores taps and follows the dominant axis", () => {
+  assert.equal(headingFromSwipe(0, 0), null);
+  assert.equal(headingFromSwipe(10, -8), null);
+  assert.equal(headingFromSwipe(50, 12), "right");
+  assert.equal(headingFromSwipe(-12, -50), "up");
+});
+
+test("swipe headings queue through queueDirection and still ignore a 180 against body heading", () => {
+  const headingRight = playable({ direction: "right" });
+  const reverse = headingFromSwipe(-40, 0);
+  assert.equal(reverse, "left");
+  assert.equal(queueDirection(headingRight, reverse).queuedDirection, null);
+
+  const turn = headingFromSwipe(0, -40);
+  assert.equal(turn, "up");
+  const queued = queueDirection(headingRight, turn);
+  assert.equal(queued.queuedDirection, "up");
+  const next = step(queued);
+  assert.equal(next.direction, "up");
+});
+
+test("headingFromSwipeOnce queues only the first qualifying move of a gesture", () => {
+  assert.equal(headingFromSwipeOnce(10, 0, false), null);
+  assert.equal(headingFromSwipeOnce(40, 0, false), "right");
+  assert.equal(headingFromSwipeOnce(40, 80, true), null);
+  assert.equal(headingFromSwipeOnce(-50, 0, true), null);
+});
+
+test("boardDisplaySize fits the full 20×28 grid into a phone viewport", () => {
+  const desktop = boardDisplaySize(20, 20, 28, 800, 800);
+  assert.deepEqual(desktop, { cssWidth: 560, cssHeight: 560 });
+
+  const phone = boardDisplaySize(20, 20, 28, 343, 500);
+  assert.equal(phone.cssWidth, 343);
+  assert.equal(phone.cssHeight, 343);
+  assert.ok(phone.cssWidth <= 343);
+  assert.ok(phone.cssHeight <= 500);
+
+  const landscape = boardDisplaySize(20, 20, 28, 700, 280);
+  assert.equal(landscape.cssWidth, 280);
+  assert.equal(landscape.cssHeight, 280);
+});
+
+test("availableBoardWidth uses one cap so width and height stay square", () => {
+  assert.equal(availableBoardWidth(1200, 32, 720, 2), 718);
+  assert.equal(availableBoardWidth(390, 32, 343, 2), 341);
+  const size = boardDisplaySize(20, 20, 28, availableBoardWidth(800, 32, 720, 2), 500);
+  assert.equal(size.cssWidth, size.cssHeight);
+});
+
+test("viewportSizeFrom prefers visualViewport and falls back to inner size", () => {
+  assert.deepEqual(viewportSizeFrom({ width: 390, height: 620 }, 390, 844), {
+    width: 390,
+    height: 620,
+  });
+  assert.deepEqual(viewportSizeFrom(null, 1024, 768), { width: 1024, height: 768 });
+  assert.deepEqual(viewportSizeFrom({ width: 0, height: 0 }, 375, 667), {
+    width: 375,
+    height: 667,
+  });
+});
+
+test("touchWithId binds a gesture to the first identifier and ignores others", () => {
+  const touches = [
+    { identifier: 7, clientX: 10, clientY: 20 },
+    { identifier: 9, clientX: 80, clientY: 90 },
+  ];
+  assert.equal(touchWithId(touches, 7).clientX, 10);
+  assert.equal(touchWithId(touches, 9).clientY, 90);
+  assert.equal(touchWithId(touches, 3), null);
+  assert.equal(touchWithId(touches, null), null);
 });
 
 test("a dead snake does not move on later ticks", () => {

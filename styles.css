@@ -27,6 +27,7 @@ body {
 
 .app {
   max-width: 720px;
+  width: 100%;
   margin: 0 auto;
   padding: 32px 16px 48px;
 }
@@ -86,16 +87,19 @@ button:hover {
 
 .stage {
   position: relative;
-  display: inline-block;
+  display: block;
+  width: fit-content;
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(2, 6, 23, 0.55);
+  touch-action: none;
 }
 
 canvas {
   display: block;
   background: var(--panel);
+  touch-action: none;
 }
 
 .overlay {
@@ -152,6 +156,10 @@ canvas {
 }
 
 @media (max-width: 720px) {
+  .app {
+    padding: 16px 12px 24px;
+  }
+
   .hud {
     flex-direction: column;
     align-items: flex-start;
